@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Photo Branding Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1000px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .upload-btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .upload-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .canvas-container {
+            position: relative;
+            margin: 30px auto;
+            text-align: center;
+            background: #f5f5f5;
+            border-radius: 10px;
+            overflow: hidden;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            cursor: default;
+        }
+
+        #canvas.dragging {
+            cursor: move;
+        }
+
+        .placeholder {
+            color: #999;
+            font-size: 18px;
+        }
+
+        .caption-section {
+            margin: 30px 0;
+        }
+
+        .caption-section label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .caption-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .caption-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .caption-preview {
+            margin-top: 15px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .caption-preview p {
+            color: #333;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        .hashtags {
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .action-btn {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .download-btn {
+            background: #10b981;
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .download-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+        }
+
+        .share-btn {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .share-btn:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            color: #856404;
+        }
+
+        .instructions p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .action-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Event Photo Branding Tool</h1>
+
+        <div class="upload-section">
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                Upload Photo
+            </button>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="canvas"></canvas>
+            <div class="placeholder" id="placeholder">Upload a photo to get started</div>
+        </div>
+
+        <div class="caption-section">
+            <label for="captionInput">Event Caption:</label>
+            <input
+                type="text"
+                id="captionInput"
+                class="caption-input"
+                placeholder="Enter your event caption..."
+            >
+            <div class="caption-preview">
+                <p id="captionPreview">Your caption will appear here</p>
+                <p class="hashtags">#he5solutions #itconsulting #remodeling</p>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="action-btn download-btn" id="downloadBtn" disabled>
+                <span>⬇</span> Download Image
+            </button>
+            <button class="action-btn share-btn" id="shareBtn" disabled>
+                <span>📤</span> Share
+            </button>
+        </div>
+
+        <div class="instructions">
+            <p><strong>Instructions:</strong></p>
+            <p>• Upload a photo to automatically add the HE5 Solutions logo</p>
+            <p>• Drag the logo to reposition it anywhere on the image</p>
+            <p>• Add a custom caption that will appear with your branded photo</p>
+            <p>• Download or share your branded event photo</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('fileInput');
+        const placeholder = document.getElementById('placeholder');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const captionInput = document.getElementById('captionInput');
+        const captionPreview = document.getElementById('captionPreview');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const shareBtn = document.getElementById('shareBtn');
+
+        let uploadedImage = null;
+        let logoImage = null;
+        let logoPosition = { x: 20, y: 20 };
+        let logoSize = { width: 0, height: 0 };
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let canvasScale = 1;
+
+        const hashtags = ' #he5solutions #itconsulting #remodeling';
+
+        function loadLogo() {
+            logoImage = new Image();
+            logoImage.onload = function() {
+                if (uploadedImage) {
+                    calculateLogoSize();
+                    drawCanvas();
+                }
+            };
+            logoImage.onerror = function() {
+                console.warn('Logo file (he5logo.png) not found. Trying SVG...');
+                tryLoadSvgLogo();
+            };
+            logoImage.src = 'he5logo.png';
+        }
+
+        function tryLoadSvgLogo() {
+            logoImage = new Image();
+            logoImage.onload = function() {
+                if (uploadedImage) {
+                    calculateLogoSize();
+                    drawCanvas();
+                }
+            };
+            logoImage.onerror = function() {
+                console.warn('Logo file (he5logo.svg) not found. Using placeholder.');
+                createPlaceholderLogo();
+            };
+            logoImage.src = 'he5logo.svg';
+        }
+
+        function createPlaceholderLogo() {
+            const placeholderCanvas = document.createElement('canvas');
+            placeholderCanvas.width = 200;
+            placeholderCanvas.height = 200;
+            const pCtx = placeholderCanvas.getContext('2d');
+
+            pCtx.fillStyle = '#667eea';
+            pCtx.fillRect(0, 0, 200, 200);
+
+            pCtx.fillStyle = 'white';
+            pCtx.font = 'bold 40px Arial';
+            pCtx.textAlign = 'center';
+            pCtx.textBaseline = 'middle';
+            pCtx.fillText('HE5', 100, 100);
+
+            logoImage = new Image();
+            logoImage.onload = function() {
+                if (uploadedImage) {
+                    calculateLogoSize();
+                    drawCanvas();
+                }
+            };
+            logoImage.src = placeholderCanvas.toDataURL();
+        }
+
+        function calculateLogoSize() {
+            if (!uploadedImage || !logoImage) return;
+
+            const logoWidth = canvas.width * 0.15;
+            const aspectRatio = logoImage.height / logoImage.width;
+            const logoHeight = logoWidth * aspectRatio;
+
+            logoSize = { width: logoWidth, height: logoHeight };
+        }
+
+        function drawCanvas() {
+            if (!uploadedImage) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
+
+            if (logoImage && logoImage.complete) {
+                ctx.drawImage(
+                    logoImage,
+                    logoPosition.x,
+                    logoPosition.y,
+                    logoSize.width,
+                    logoSize.height
+                );
+            }
+        }
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                uploadedImage = new Image();
+                uploadedImage.onload = function() {
+                    canvas.width = uploadedImage.width;
+                    canvas.height = uploadedImage.height;
+
+                    placeholder.style.display = 'none';
+                    canvas.style.display = 'block';
+
+                    logoPosition = { x: 20, y: 20 };
+
+                    if (logoImage && logoImage.complete) {
+                        calculateLogoSize();
+                    }
+
+                    drawCanvas();
+
+                    downloadBtn.disabled = false;
+                    shareBtn.disabled = false;
+                };
+                uploadedImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function getCanvasCoordinates(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            canvasScale = canvas.width / rect.width;
+
+            const x = (clientX - rect.left) * canvasScale;
+            const y = (clientY - rect.top) * canvasScale;
+
+            return { x, y };
+        }
+
+        function isOverLogo(x, y) {
+            return x >= logoPosition.x &&
+                   x <= logoPosition.x + logoSize.width &&
+                   y >= logoPosition.y &&
+                   y <= logoPosition.y + logoSize.height;
+        }
+
+        function constrainPosition() {
+            logoPosition.x = Math.max(0, Math.min(logoPosition.x, canvas.width - logoSize.width));
+            logoPosition.y = Math.max(0, Math.min(logoPosition.y, canvas.height - logoSize.height));
+        }
+
+        canvas.addEventListener('mousedown', function(e) {
+            const coords = getCanvasCoordinates(e.clientX, e.clientY);
+
+            if (isOverLogo(coords.x, coords.y)) {
+                isDragging = true;
+                dragOffset.x = coords.x - logoPosition.x;
+                dragOffset.y = coords.y - logoPosition.y;
+                canvas.classList.add('dragging');
+                e.preventDefault();
+            }
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+
+            const coords = getCanvasCoordinates(e.clientX, e.clientY);
+            logoPosition.x = coords.x - dragOffset.x;
+            logoPosition.y = coords.y - dragOffset.y;
+
+            constrainPosition();
+            drawCanvas();
+            e.preventDefault();
+        });
+
+        canvas.addEventListener('mouseup', function() {
+            isDragging = false;
+            canvas.classList.remove('dragging');
+        });
+
+        canvas.addEventListener('mouseleave', function() {
+            isDragging = false;
+            canvas.classList.remove('dragging');
+        });
+
+        canvas.addEventListener('touchstart', function(e) {
+            if (e.touches.length !== 1) return;
+
+            const touch = e.touches[0];
+            const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
+
+            if (isOverLogo(coords.x, coords.y)) {
+                isDragging = true;
+                dragOffset.x = coords.x - logoPosition.x;
+                dragOffset.y = coords.y - logoPosition.y;
+                canvas.classList.add('dragging');
+                e.preventDefault();
+            }
+        });
+
+        canvas.addEventListener('touchmove', function(e) {
+            if (!isDragging || e.touches.length !== 1) return;
+
+            const touch = e.touches[0];
+            const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
+            logoPosition.x = coords.x - dragOffset.x;
+            logoPosition.y = coords.y - dragOffset.y;
+
+            constrainPosition();
+            drawCanvas();
+            e.preventDefault();
+        });
+
+        canvas.addEventListener('touchend', function() {
+            isDragging = false;
+            canvas.classList.remove('dragging');
+        });
+
+        captionInput.addEventListener('input', function() {
+            const text = this.value.trim();
+            captionPreview.textContent = text || 'Your caption will appear here';
+        });
+
+        downloadBtn.addEventListener('click', function() {
+            if (!uploadedImage) return;
+
+            const dataURL = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'he5-branded-photo.png';
+            link.href = dataURL;
+            link.click();
+        });
+
+        shareBtn.addEventListener('click', async function() {
+            if (!uploadedImage) return;
+
+            const caption = captionInput.value.trim();
+            const fullCaption = caption + hashtags;
+
+            if (navigator.share && navigator.canShare) {
+                try {
+                    const blob = await new Promise(resolve => {
+                        canvas.toBlob(resolve, 'image/png');
+                    });
+
+                    const file = new File([blob], 'he5-branded-photo.png', { type: 'image/png' });
+
+                    const shareData = {
+                        text: fullCaption,
+                        files: [file]
+                    };
+
+                    if (navigator.canShare(shareData)) {
+                        await navigator.share(shareData);
+                    } else {
+                        fallbackShare(fullCaption);
+                    }
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        fallbackShare(fullCaption);
+                    }
+                }
+            } else {
+                fallbackShare(fullCaption);
+            }
+        });
+
+        function fallbackShare(caption) {
+            const dataURL = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = 'he5-branded-photo.png';
+            link.href = dataURL;
+            link.click();
+
+            navigator.clipboard.writeText(caption).then(() => {
+                alert('Image downloaded! Caption copied to clipboard.');
+            }).catch(() => {
+                alert('Image downloaded! Please copy the caption manually.');
+            });
+        }
+
+        loadLogo();
+    </script>
+</body>
+</html>
