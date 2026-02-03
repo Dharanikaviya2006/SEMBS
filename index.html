@@ -266,96 +266,35 @@
         const shareBtn = document.getElementById('shareBtn');
 
         let uploadedImage = null;
-        let logoImage = null;
-        let logoPosition = { x: 20, y: 20 };
-        let logoSize = { width: 0, height: 0 };
-        let isDragging = false;
-        let dragOffset = { x: 0, y: 0 };
-        let canvasScale = 1;
+        let frameImage = new Image();
+        let frameLoaded = false;
 
         const hashtags = ' #he5solutions #itconsulting #remodeling';
 
-        function loadLogo() {
-            logoImage = new Image();
-            logoImage.onload = function() {
-                if (uploadedImage) {
-                    calculateLogoSize();
-                    drawCanvas();
-                }
-            };
-            logoImage.onerror = function() {
-                console.warn('Logo file (he5logo.png) not found. Trying SVG...');
-                tryLoadSvgLogo();
-            };
-            logoImage.src = 'he5logo.png';
-        }
-
-        function tryLoadSvgLogo() {
-            logoImage = new Image();
-            logoImage.onload = function() {
-                if (uploadedImage) {
-                    calculateLogoSize();
-                    drawCanvas();
-                }
-            };
-            logoImage.onerror = function() {
-                console.warn('Logo file (he5logo.svg) not found. Using placeholder.');
-                createPlaceholderLogo();
-            };
-            logoImage.src = 'he5logo.svg';
-        }
-
-        function createPlaceholderLogo() {
-            const placeholderCanvas = document.createElement('canvas');
-            placeholderCanvas.width = 200;
-            placeholderCanvas.height = 200;
-            const pCtx = placeholderCanvas.getContext('2d');
-
-            pCtx.fillStyle = '#667eea';
-            pCtx.fillRect(0, 0, 200, 200);
-
-            pCtx.fillStyle = 'white';
-            pCtx.font = 'bold 40px Arial';
-            pCtx.textAlign = 'center';
-            pCtx.textBaseline = 'middle';
-            pCtx.fillText('HE5', 100, 100);
-
-            logoImage = new Image();
-            logoImage.onload = function() {
-                if (uploadedImage) {
-                    calculateLogoSize();
-                    drawCanvas();
-                }
-            };
-            logoImage.src = placeholderCanvas.toDataURL();
-        }
-
-        function calculateLogoSize() {
-            if (!uploadedImage || !logoImage) return;
-
-            const logoWidth = canvas.width * 0.15;
-            const aspectRatio = logoImage.height / logoImage.width;
-            const logoHeight = logoWidth * aspectRatio;
-
-            logoSize = { width: logoWidth, height: logoHeight };
-        }
+        function loadFrame() {
+        frameImage.src = "frame.png"; // your transparent frame
+        frameImage.onload = () => {
+        frameLoaded = true;
+        drawCanvas();
+        };
+        frameImage.onerror = () => {
+        console.warn("Frame image not found (frame.png)");
+        };
+}
 
         function drawCanvas() {
-            if (!uploadedImage) return;
+        if (!uploadedImage) return;
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
+        canvas.width = uploadedImage.width;
+        canvas.height = uploadedImage.height;
 
-            if (logoImage && logoImage.complete) {
-                ctx.drawImage(
-                    logoImage,
-                    logoPosition.x,
-                    logoPosition.y,
-                    logoSize.width,
-                    logoSize.height
-                );
-            }
-        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
+        if (frameLoaded) {
+        ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
+    }
+}
+
 
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -373,8 +312,7 @@
 
                     logoPosition = { x: 20, y: 20 };
 
-                    if (logoImage && logoImage.complete) {
-                        calculateLogoSize();
+                    if (frameLoaded) drawCanvas();
                     }
 
                     drawCanvas();
@@ -539,7 +477,7 @@
             });
         }
 
-        loadLogo();
+        loadFrame();
     </script>
 </body>
 </html>
