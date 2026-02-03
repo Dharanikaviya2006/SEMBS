@@ -266,19 +266,29 @@
         const shareBtn = document.getElementById('shareBtn');
 
         let uploadedImage = null;
-        let frameImage = null;
+        let logoImage = null;
+        let logoPosition = { x: 20, y: 20 };
+        let logoSize = { width: 0, height: 0 };
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let canvasScale = 1;
 
         const hashtags = ' #he5solutions #itconsulting #remodeling';
 
-        function loadFrame() {
-            frameImage = new Image();
-            frameImage.onload = function() {
-            if (uploadedImage) 
-                drawCanvas();
-        };
-            frameImage.src = 'frame.png'; 
+        function loadLogo() {
+            logoImage = new Image();
+            logoImage.onload = function() {
+                if (uploadedImage) {
+                    calculateLogoSize();
+                    drawCanvas();
+                }
+            };
+            logoImage.onerror = function() {
+                console.warn('Logo file (he5logo.png) not found. Trying SVG...');
+                tryLoadSvgLogo();
+            };
+            logoImage.src = 'he5logo.png';
         }
-
 
         function tryLoadSvgLogo() {
             logoImage = new Image();
@@ -320,37 +330,32 @@
             logoImage.src = placeholderCanvas.toDataURL();
         }
 
-       function drawCanvas() {
-        if (!uploadedImage || !frameImage) return;
+        function calculateLogoSize() {
+            if (!uploadedImage || !logoImage) return;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const logoWidth = canvas.width * 0.15;
+            const aspectRatio = logoImage.height / logoImage.width;
+            const logoHeight = logoWidth * aspectRatio;
 
-        // Calculate cover-fit for user image
-        const frameRatio = canvas.width / canvas.height;
-        const imgRatio = uploadedImage.width / uploadedImage.height;
-
-        let drawWidth, drawHeight, offsetX, offsetY;
-
-        if (imgRatio > frameRatio) {
-            drawHeight = canvas.height;
-            drawWidth = drawHeight * imgRatio;
-            offsetX = (canvas.width - drawWidth) / 2;
-            offsetY = 0;
-            } 
-        else 
-        {
-            drawWidth = canvas.width;
-            drawHeight = drawWidth / imgRatio;
-            offsetX = 0;
-            offsetY = (canvas.height - drawHeight) / 2;
+            logoSize = { width: logoWidth, height: logoHeight };
         }
 
-    ctx.drawImage(uploadedImage, offsetX, offsetY, drawWidth, drawHeight);
+        function drawCanvas() {
+            if (!uploadedImage) return;
 
-    // Draw frame overlay on top
-    ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
-}
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
 
+            if (logoImage && logoImage.complete) {
+                ctx.drawImage(
+                    logoImage,
+                    logoPosition.x,
+                    logoPosition.y,
+                    logoSize.width,
+                    logoSize.height
+                );
+            }
+        }
 
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -365,6 +370,11 @@
 
                     placeholder.style.display = 'none';
                     canvas.style.display = 'block';
+
+                    logoPosition = { x: 20, y: 20 };
+
+                    if (logoImage && logoImage.complete) {
+                        calculateLogoSize();
                     }
 
                     drawCanvas();
@@ -377,6 +387,94 @@
             reader.readAsDataURL(file);
         });
 
+        function getCanvasCoordinates(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            canvasScale = canvas.width / rect.width;
+
+            const x = (clientX - rect.left) * canvasScale;
+            const y = (clientY - rect.top) * canvasScale;
+
+            return { x, y };
+        }
+
+        function isOverLogo(x, y) {
+            return x >= logoPosition.x &&
+                   x <= logoPosition.x + logoSize.width &&
+                   y >= logoPosition.y &&
+                   y <= logoPosition.y + logoSize.height;
+        }
+
+        function constrainPosition() {
+            logoPosition.x = Math.max(0, Math.min(logoPosition.x, canvas.width - logoSize.width));
+            logoPosition.y = Math.max(0, Math.min(logoPosition.y, canvas.height - logoSize.height));
+        }
+
+        canvas.addEventListener('mousedown', function(e) {
+            const coords = getCanvasCoordinates(e.clientX, e.clientY);
+
+            if (isOverLogo(coords.x, coords.y)) {
+                isDragging = true;
+                dragOffset.x = coords.x - logoPosition.x;
+                dragOffset.y = coords.y - logoPosition.y;
+                canvas.classList.add('dragging');
+                e.preventDefault();
+            }
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+
+            const coords = getCanvasCoordinates(e.clientX, e.clientY);
+            logoPosition.x = coords.x - dragOffset.x;
+            logoPosition.y = coords.y - dragOffset.y;
+
+            constrainPosition();
+            drawCanvas();
+            e.preventDefault();
+        });
+
+        canvas.addEventListener('mouseup', function() {
+            isDragging = false;
+            canvas.classList.remove('dragging');
+        });
+
+        canvas.addEventListener('mouseleave', function() {
+            isDragging = false;
+            canvas.classList.remove('dragging');
+        });
+
+        canvas.addEventListener('touchstart', function(e) {
+            if (e.touches.length !== 1) return;
+
+            const touch = e.touches[0];
+            const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
+
+            if (isOverLogo(coords.x, coords.y)) {
+                isDragging = true;
+                dragOffset.x = coords.x - logoPosition.x;
+                dragOffset.y = coords.y - logoPosition.y;
+                canvas.classList.add('dragging');
+                e.preventDefault();
+            }
+        });
+
+        canvas.addEventListener('touchmove', function(e) {
+            if (!isDragging || e.touches.length !== 1) return;
+
+            const touch = e.touches[0];
+            const coords = getCanvasCoordinates(touch.clientX, touch.clientY);
+            logoPosition.x = coords.x - dragOffset.x;
+            logoPosition.y = coords.y - dragOffset.y;
+
+            constrainPosition();
+            drawCanvas();
+            e.preventDefault();
+        });
+
+        canvas.addEventListener('touchend', function() {
+            isDragging = false;
+            canvas.classList.remove('dragging');
+        });
 
         captionInput.addEventListener('input', function() {
             const text = this.value.trim();
@@ -441,7 +539,7 @@
             });
         }
 
-        loadFrame();
+        loadLogo();
     </script>
 </body>
 </html>
